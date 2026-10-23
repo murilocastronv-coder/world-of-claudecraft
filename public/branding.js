@@ -24,11 +24,27 @@
     for (const child of el.childNodes) patch(child);
   }
   patch(document.documentElement);
+  const hideOldFooterLinks = root => {
+    const patterns = [/wishlist on steam/i, /open source project/i, /join the discord/i, /^donate$/i];
+    const nodes = root && root.querySelectorAll ? root.querySelectorAll("a,button,[role='link']") : [];
+    for (const node of nodes) {
+      const label = (node.innerText || node.textContent || "").trim().replace(/\\s+/g, " ");
+      if (patterns.some(pattern => pattern.test(label))) {
+        const target = node.closest("li, .footer-link, .footer-item, .social-link, .nav-item") || node;
+        target.style.display = "none";
+      }
+    }
+  };
+  hideOldFooterLinks(document);
   const observer = new MutationObserver(records => {
     for (const record of records) {
       if (record.type === "characterData") patch(record.target);
       else if (record.type === "attributes") patch(record.target);
-      else for (const node of record.addedNodes) patch(node);
+      else for (const node of record.addedNodes) {
+        patch(node);
+        if (node.nodeType === Node.ELEMENT_NODE) hideOldFooterLinks(node);
+      }
+      hideOldFooterLinks(document);
     }
   });
   observer.observe(document.documentElement, {
